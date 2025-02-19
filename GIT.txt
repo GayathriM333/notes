@@ -1,0 +1,115 @@
+devops stages - plan,code,build,test,release,deploy,operate,monitor
+ec2-elastic compute cloud -- Launching an ec2 instance - AMI,instanceType, name, volume, secret group, key pair, networking
+Linux commands
+
+GIT: 
+1.working directory
+     git add
+2.staging area
+     git commit
+3.repository
+
+-> yum install git -y{yellowdog updater modifier}{-y = without permission}
+-> git init . {git initialize in current directory}{.git folder will be created}
+->git status, git add <filename>, git log, git show <commitID>
+
+->To track all files :
+git add *
+->To track all files including hidden fi les:
+git add .
+->To commit all files :
+git commit -m “commit message” .
+Here dot (.) represents all the fi les which are present in staging area
+->To see the history of files :
+git log
+->To see latest 2 commits :
+git log -2
+->To see all commits-ids and messages :
+git log --oneline
+->To see all full commits-ids and messages :
+git log --pretty=oneline
+->To get the commit details along with filenames :
+git show commit-id --name-only
+->To get the commit details along with the changes in filenames :
+git show commit-id
+->To get the commit details along with the changes in files & stats :
+git show commit-id --stat
+->To untrack a file : git rm --cached filename
+->git log --follow --all filename : used to get all commits for a file
+->GIT CONFIG : Used to add our name and email for git history
+git config user.name “username” : used to add our name
+git config user.email “email” : used to add email
+->GIT IGNORE:
+a ".gitignore" file is used in Git to tell Git which files and directories to ignore when tracking changes in a project.
+-> to track ignored files : git add -f * 
+-> only commit : soft
+commit + action :hard
+-> git reset --hard HEAD~1 : used to delete latest commit along with change
+-> git reset --soft HEAD~1 : used to delete only latest commit
+->git reflog (to know about commits deletion)
+->git cherry-pick <commitID> : to get the deleted commit with action, also used to get the commits from one branch to another branch
+->git update -ref -d HEAD (deletes all commmits but not the content of the file)
+****using git reset cmd, we cannot delete all the commits at a time
+->GIT BRANCH
+The git branch command lets you create, list, rename, and delete branches.
+The default branch name in Git is master, allows you to work on different features or changes to your code independently, without affecting the main or other branches
+->git branch :used to see the list of branches
+git branch branch-name :to create a branch
+git checkout branch-name :to switch one branch to another
+git checkout -b branch-name : used to create and switch a branch at a time
+git branch -m old-branch new-branch :used to rename a branch
+git branch -d branch-name :to delete a branch( -d option will delete the branch only if it has already been pushed and merged with the remote branch)
+git branch -D branch-name :to delete a branch forcefully
+git merge branch_name -> used in the Git version control system to combine changes from one branch
+git revert commit_id  -> used to delete a specific change based on commit which will create new commit
+git reset <filename> -> if you deleted the action but didnot commit it then you can restore the file 
+git commit --amend  --author “user <email>” : To change author of the latest commit
+git commit  --amend -m “new message” : To change message of the latest commit
+git commit --amend --no-edit : this command  : It is used to add the staging area files to latest commit
+-> GIT STASH:  Using the git stash command, developers can temporarily save changes made in the working directory. It allows them to quickly switch contexts when they are not quite ready to commit changes. And it allows them to more easily switch between branches. Generally, the stash's meaning is "store something safely in a hidden place." 
+git stash to delete the changes permanently
+ git stash: save "message" to save the stash along with the message
+ git stash apply : to get back the data again
+ git stash: list to get the list of stashes
+ git stash: clear to clear all stashes
+ git stash pop :to delete the first stash
+ git stash drop :used to delete the latest stash
+ git stash drop stash@{2} :used to delete a praticular stash
+ 
+Difference btw GIT & GITHUB:
+git(tool) is cmdline tool that runs in your local computer. used git to create a repository,add files to it,make changes to those files, commit those changes.you can use git to push changesto remote repository such one hpste in guthub
+github(service) is web based service thatprovides web based interface for managing git repositories.when u use github you are using git as underlying vcs but youre interacting with it through webbrowser
+
+git remote add origin <github url>
+git remote -v
+git push -u origin <branchname>
+git push -u origin --all
+
+we can see folder that are commited in github after git push and we can push branch directly but we cannot do it for single file 
+->PULL BEFORE PUSH(if one writes the code in git and pushes to github and the other downloads code,make changes and resends it to github. now to get the changes from github to local we use below cmd
+git pull origin master
+Token(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)
+scenario: c1,c2 in git-> push-> c3 in github-> no pull then-> c4 in git ...now we cannot push the code and cannot pull it.to resolve the issue : 
+git reset --soft HEAD~1
+git pull origin master: used to get the chanes from central to local
+git commit -m "msg" filename
+git push -u origin master
+-> pull=fetch+merge
+git fetch branch-name: used to fetch the data from central to local
+Difference btw clone & pull : clone will download entire repo to your local system & pull cmd to get changes only from github to local
+fork - to get other user repo from github to our github 
+ git clone repo-url : used to get the code from central to local
+ git fetch --all  : used to fetch the changes from all branches in github
+ git merge origin/branch :used to merge the changes from cental to local
+ git push -u origin --delete branch-name : used to delete the github branch from local
+git remote rm origin : used to unlink the github-repo
+ git remote rename old -link new-link : used to change the repo
+ 
+ 
+
+pending -- tags, rebase concept
+
+
+
+
+
