@@ -1,0 +1,333 @@
+jenkins creds - Rajesh
+pswd- Gaya@9163
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+continuous integration - continuous build + Test
+Before CI - source code(remote repo)->clone->build using maven(war/jar generate)->taking this another system for testing
+After CI - when developer commit & push code in github- then  ci pipeline get the changes of the code runs automatically (build+test) 
+
+continuous delivery/deployment - 
+Continuous delivery ---> build-test-deploy to staging-acceptance test - deploy to production(manual)-smoke tests
+continuous Deployment ---> build-test-deploy to staging-acceptance test-deploy to prod(automatic)-smoke tests
+
+CICD PIPELINE:
+
+version control (git/github) - build(maven) - unit test(maven) - deploy - auto test - deploy to prod - measure+validate
+
+jenkins is open source, platform independent, free to use, community supported.
+consists plugins, whenever developer write code we integrate all the code of all developers at any point in time and we build test and deploy it to client called ci/cd
+
+jenkins advantage:
+follows master-slave architecture, can write your own plugin or use community plugin
+
+*** jenkins dependency - java11
+jenkins setup:
+launch ec2 instance with 8080 port number(GUI)
+install java(yum list java*) - ( yum install java-17-amazon-corretto.x86_64 -y)
+one file needs to be there in the server ->jenkins official document -> go to jenkins.io website-> click on download -> execute 2 cmds & setup jenkins
+security group - inbound(8080) & outbound(All)
+yum install jenkins -y && systemctl start jenkins-> access url with public ip address with port 8080
+create job - scm- github url(public) or private(add creds - select jenkins - github username - token)
+go to repository-click on webhooks- enter payload url(http://publicip:port/github-webhook/
+go to jenkins - job-configure- build triggers(check github hook trigger for gitscm polling)
+make changes in github and commit the changes then automatically build will trigger
+---------------------------------------------------------------------------------------------------------------------------------------------------
+default path - /var/lib/jenkins
+create a job - General - discard old builds option
+Thin Backup Plugin -> go to manage jenkins - plugin - available plugin- install thin backup
+again go to manage jenkins- system-thin backup configurations (enter backup directory,bkp schedule for full backups,move old backups to zip files).we get permission issues(chown jenkins:jenkins foldername)
+manage jenkins - thin backup - bkp now or restore - if you get error, restart jenkins
+------------------------------------------------------------------------------------------------------------------------------------------------------
+integrate bitbucket to jenkins:
+createjob - scm - give bit bucket repo url -build now
+install bit bucket plugin(integrate with bitbucket 
+in bitbucket - repository settings -webhooks - add(url,commit commented created), select skip ssl
+jobs-build triggers - select option build when change is pushed to bitbucket.
+
+scenario: job1 build manually and then automatically job2 trigger then job3 then job4 triggers
+create 4 empty jobs, go to job2 - configure - select option build after other projects are build. same with job3 & job4(check build queue)
+
+we wanted jobs to be triggered one by one - what if any job gets failed.... we have options under configure - build triggers - options (trigger even if the build fails)
+
+
+pipeline view: manage jenkins - plugin - build pipeline plugin install.Now go to dashboard - click on +(new view) , pipeline name, select job1 - click on Run to trigger
+
+Upstream and Downstream project diff:
+
+job1   --------- job2 ------------job3 ------------job4
+job2 upstream is job1, job2 downstream job3 etc.
+
+cron job for scheduling:
+build periodically - cron syntax - 5 stars, minutes:hours:day of month:month of the year:day of the week(sunday-0)
+click on job - configure - select build periodically(crontab guru website)
+POLLSCM : used for scheduling.(job - configure - pollscm) we set time tomorrow evening 5pm then all the changes until that particular time will get triggered. depends upon commits/source code
+Build periodically - even when action didnot happened still job triggers(independent of source code)
+
+user management :
+developer jobs, testing jobs, devops(full permissions)
+manage jenkins - users - create user (username, pswd, email)
+to create roles, we need to install plugin - role based authorization strategy
+now go to manage jenkins - security - go to authorization (select Role-based startegy)-save and then you will get manage and assign roles under manage jenkins.
+add the roles in manage roles-> developer(read & build), tester(read, build, delete), devops(administer)- save
+go to assign roles -> add usernames - save
+
+status of jobs access - add user in manage jenkins (person1)
+manage jenkins -manage and assign roles - manage roles - job section read permission (role to add -ex. viewer) and assign role(viewer) to the user(person2)
+here the drawback is the permissions for the person is given for all the present jobs that means if read only permission for job 1 is needed but it applies for the all the jobs
+
+status of particular job access - 
+manage jenkins - security - project based matrixauth strategy - add users - provide permissions read 
+go to job2 - configure - general - select enable project based security - add user for that job
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+deployment using jenkins:
+
+1.create ec2 instance with 8080 port security group for jenkins, download java 17, install jenkins & start, install git
+2.create a job - scm - provide github url(here code will be moved to ci server - /var/lib/jenkins/workspace
+3.now for build+test we user maven- so install java1.8 & then maven - job - configure - build steps - select invoke toplevel maven targets & goal "clean package"
+4.launch one more ec2 instance for tomcat - install java - download binary of tomcat from dlcdn.tomcat.org website - unzip, start - update context.xml,tomcat-users.xml
+access tomcat url with hostname:8080 
+now go to manage jenkins - plugins - install deploy to container plugin
+go to jobs -configure - post build actions - choose option deploy to container -provide details war/ear location target,contextpath,add container,tomcat creds,tomcat url
+5.build now
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+NEXUS integration:
+
+source code passed all test cases and ready to deploy, store in service called artifactory. example - nexus,jfrog,s3
+launch ec2 instances - install jenkins, tomcat,git, maven(java1.8).
+install java1.8, install nexus with t3.micro, 20gb EBS volume, 8081 port
+mkdir /app,go to /app,download nexus url, untar gz file, mv nexus-3.70.1-02 nexus, add user (useradd nexus),chown -R nexus sonartype-work
+go to bin - vim nexus.rc (remove #, run as user=nexus)
+vi /etc/systemd/system/nexus.service-paste script, chkconfig nexus on && systemctl start nexus
+access nexus url with port 8081 -> for pswd, go to /app/sontype-work/nexus3/admin.password
+{{create repository in nexus - settings - create repo - select maven2(hosted) - give name and select allow redeploy in deployment policy
+click on cube symbol - browse - created repo will be seen}}
+
+create new job -scm (github url)- buildsteps(invoke maven) - integrate nexus with jenkins.
+install nexus artifact uploader plugin
+go to job - build steps - click on add & select nexus artifact uploader(provide details like nexus version, url, creds, protocol, groupID & version from pom.xml, repo name, artifact id,type(war), file(target/web8.6.war)
+BuildNow
+
+now change index.jsp & edit version 8.6.3, commit the changes
+
+***webhooks will not be used when nexus integrated
+
+to rollback - we have to just modify war file version in real time
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+default - admin(full permissions) - dev,test users
+
+if admin creds are missed....
+plugin install -role based auth strategy 
+create users
+manage jenkins - security -role based strategy - manage role (create role)- assign role
+manage jenkins - users - pswd change
+
+if default creds are missing....
+cd /var/lib/jenkins/config.xml - use security(false) - restart jenkins
+manage jenkins - security - security realm - jenkins own user database - loggedin user can do anything
+
+master-slave architecture:
+
+launch ec2 instances - no need to install jenkins in slave - we just need to install jenkins dependencies (java17)
+
+configure slave node below are the steps
+jenkins dashboard - manage jenkins - nodes - new node (name, permanent agent, no of executors(it means parallel builds), remote root directory(for job information as this is slave concept),label,usage(only build jobs with label expression match, launch method(SSH), host(privateIP), SAVE
+
+create job - configure - build steps - select execute shell ---> this will run in master node aswe didnot configure the job to run on slave node
+job - configure - select Restrict where this project can be run-provide label
+we can run job in only one server 
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+difference btw freestyle and pipeline jobs:
+create job - select pipeline - additional option called pipeline script
+
+jenkins pipeline is a combination of plugins that supports integration and implementation of continuous delivery pipelines
+Also, a pipeline is group of events interlinked with each other in sequence 
+2 types of jenkins pipeline syntax: declarative & scripted
+
+Declarative Job Syntax:
+pipeline {
+agent any{
+stages{
+stage("code")
+steps{
+}}}}
+
+if you want to run jobs in particular node:
+pipeline{
+agent {
+node{
+label "dev"
+}}
+stages{
+
+
+to give multiple cmd in single stage:
+sh '''
+touch filename
+mkdir directory
+'''
+
+variables: local and global 
+post{success}{failure}{always}
+
+**** build with parametere option in job-configure-
+string, boolean,multiline string, file parameters
+
+enable parameters through pipeline
+pipeline{
+agent any{
+parametere{
+string(name:'cicd', defaultValue:'jenkins', description:"")}
+stages{stage{
+
+***Input function->we configure this to get the approval from release manager
+
+stage('Deploy')
+{
+input{
+message "can i deploy" }}
+
+****parallel stage building: stage 1 will execute, then stage 2 & job2 will trigger at the sametime
+parallel{
+stage{
+steps{
+}}}
+
+***when condition:
+pipeline{
+agent any{
+stages{
+stage('code'){
+when{
+equals(actual: currentBuild.number, expected: 5)
+steps{}}}}}}
+
+******changing port number: 
+cd  /usr/lib/systemd/system
+systemctl stop jenkins
+vi jenkins.service  - portNo(8080) -modify and save
+
+sonar setup:
+install java11, port number is 9000, cd /opt, wget url, unzip, useradd sonar, chown -R sonar:sonar filename, bin path- sh sonar.sh start,access the url with hostname &port 9000
+sonar integration with jenkins:
+install plugin - sonarqube scanner
+managejenkins - system - add sonarqube(name,url,creds,username, secrettext(myaccount-security-generatetoken using sonar url) Also, maven needs to be there for sonar
+managejenkins - tools-maven 
+paste the script in pipeline
+---------------------------------------------------------------------------------------------------------------------------------
+
+Application deployment through pipeline:
+
+-----------------------------------------------------------------------------------------------------------------------------
+ansible integration with jenkins:
+install plugin called "publish over ssh"
+managejenkins- system-SSH servers(name,hostname,pswd,user)
+create job - configure - build environments- SSH Publishers(src file,cmd)
+
+job unstable - input file syntax error 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

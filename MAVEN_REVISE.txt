@@ -1,0 +1,31 @@
+Maven is an automation project management tool.
+It is used to build the code
+once we build the code we will get JAR/WAR/EAR
+Maven is used to add the dependencies to our application.
+Maven is based on POM.xml
+to convert to sourcecode into an application, we build it and hundreds of files will become single file& exxtension of it will be war or jar or ear
+(JAVA)WAR - web archive file,(JAVA+SPRINGBOOT) JAR - java archive file,(J2EE) EAR - enterprise archive file and python inbuilt, .net MSbuild, nodejs NPM
+
+MAVEN LIFECYCLE:
+1. generate the resource(code, tools install)
+2. compile the code
+3. unit test
+4. pack the code
+5. install and then deploy (manual)
+6. clean
+
+dependency- java-1.8.0-openjdk (realtime standard version)
+yum install java-1.8.0-openjdk -y
+yum install maven -y
+mvn archetype:generate  ---> pom.xml,src folder
+we perform goals in maven in the same folder where pom.xml file is present
+mvn compile (to compile the code) -> we get target folder 
+mvn test
+mvn package
+mvn install
+mvn clean
+mvn clean package
+
+
+
+

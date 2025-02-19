@@ -1,0 +1,241 @@
+Bash is a command-line interpreter that runs in a text window and allows the user to interpret commands to do various tasks.
+A Shell Script is a sequence of these commands contained within a single file. A Shell Script can be read and executed using Bash
+
+shellscript:
+shebang - #!/bin/bash or dash or sh or ksh
+these are executables. syntax diff..
+diff btw sh or bash --> /bin/sh this means request is taken by sh and it is forwarding to bash. used concept of linking.
+these days- operating system like ubuntu started using dash instead of bash.
+--------------------------------------------------------------------------
+previously both of them were same becoz using linking concept sh and bash,but now some os started use dash as default 
+---------------------------
+echo "my name" - to print line
+----------------------------
+#!/bin/bash
+set -x #debug mode
+df -h #disk
+free -g  # memory
+nproc  # cpu
+-----------------
+ps -ef | grep -E "aws|java"
+|- pipe cmd takes output of first cmd and send it as input to secondcmd
+date | echo "today is " ---> date is system default cmd  .. this cmd will send output to stdin. pipe will not be able to receive from stdin
+awk -> pattern scanning and programming language(will give specific columns from the output
+eg: ps -ef | grep java | awk -F" " '{print $2}'  -> delimiter space
+set -e --> exit script when there is an error
+set -o pipefail -> skips wrong cmd.
+drawback of set -e is if wrong cmd followed by '|' then it will execute rest of the cmds even though it is wrong.
+--------------------------------------------
+curl -X GET <externalwebsite>  
+wget - download file
+if you dont want to save the output in a file in your local disk use curl
+if you want to store the file in lpocal then use wget cmd
+----------------------------------------
+find cmd - find / -name <filename>
+-------------------------------------
+how to access root privileges securely : most linux distributions allow power user to execute cmds with root using sudo by entering pswd for security.
+power user compile complex programs,scriptingadvanced automation tasks etc.
+-----------------------------
+sudo su - --> subsititue user do (sudo), switch user(su)
+-----------------------------------------------------------------
+if condition:
+a=5
+b=10
+
+if [ $a > $b ]
+then
+echo "a is greater than b"
+else
+echo "b is greater than a"
+fi
+-------------------------------------------------
+iterations --> for loops
+for i in {1.100}; do echo $1; done
+-------------------------------------------------
+trap cmd :trapping signals - stop execution of process we give ctrl+c --> these are called signal.
+list of signals- google(kill, sigkill, etc) -- search in google
+using trap cmd - we can trap the signal which means we can tell the linux even though we give ctrl+c donot do anything or send email notification using smtp server.
+cmd- trap "echo dont use ctrl+c"  SIGINT
+trap "rm -rf *" SIGINT
+----------------------------------------------------
+common shell scripting:
+1. write a script to print only errors from remote log
+curl <url> | grep error
+
+2. print even numbers /odd numbers/ prime numbers
+ now divisible by 3& 5 but not divisible by 15
+
+for i in {1.100}; do 
+if ([ `expr $i % 3` == 0 ] || [ `expr $i % 5` == 0 ]) &&  [ `expr &i % 15` != 0];
+then 
+ echo $i
+ fi;
+ done
+
+3. script to print number of "s" in mississipi
+x=mississipi 
+grep -o "s" <<<"$x" | wc -l
+
+4. debug in shell script
+set -x
+
+5. crontab in linux?provide example of usage
+it is used to schedule and automate tasks. eg: crontab -e, crontab -l, crontab -r, crontab -i
+usage in realtime: consider 100 server and you have to check cpu usage everyday and if server instance is running or not. then we can set crontab at certain time to check the status.
+
+6. how to open a read only file
+vi -r <filename>
+
+7. soft and hard link?
+hard link is data on storage device. hard links can only be created within samefilesystems,deleting hardlink to afile  doesnt imeediately remove file contents
+soft link is another filename that points to data on storage device.delete original file then soft link has no value, as it points to non existential file
+
+8. break and continue statements
+
+breaking or continuing the execution(SKIP)
+eg : divisible by 3 and 5 but if it is dividedby 15 then ignore----> continue
+eg: 1 ...5555....10000000- find 5555 then break
+-----------------------------------------------------------------
+disadvantages of shellscript: supports only system level automation tasks. 
+set -u --> not used. even though your shell script has n no of undeclared variables it will not complain.
+----------------------------------------------------------------
+for,while,do-while.
+---------------------------------
+is bash dynamic or statically typed and why?
+It is dynamically typed. A dynamically typed language is a programming language that determines the type of a variable at runtime, based on the value of the variable.
+--------------------------------------------------
+explain about network troubleshooting utility?
+traceroute - see why network is slow. eg: traceroute google.com
+from laptop -> router->internet service provider->google.com(hops and how much time it is taking)
+tracepath - doesnot require root privileges
+--------------------------------------------------------
+how to sort list of names in a file:
+sort comes with time complexity o(n) etc but easyway of doing is using sort cmd
+----------------------------------------------------------
+how will manage logs of a system that generate huge log files everyday?
+using logrotate
+------------------------------------------
+log level - debug, info, warn, error,fatal
+------------------------------------------------------------------------------------------------------------------------
+1. Basics of Shell Scripting
+What is a shell script? Why is it used in DevOps?
+Explain the different types of shells available in Linux/Unix.-->The shell is the Linux command line interpreter. It provides an interface between the user and the kernel and executes programs called commands. types like sh,ksh,bash,das0h
+How do you execute a shell script?
+Example: bash script.sh vs ./script.sh.
+What is the significance of #!/bin/bash at the beginning of a script?
+How do you make a script executable?
+2. Variables and Control Statements
+How do you declare and use variables in a shell script? ---> declare: variable_name=value, use: echo $variable_name
+Explain the difference between $VAR and ${VAR}.
+$ var1=foo; var2=bar; var12=12
+$ echo $var12
+12
+$ echo ${var1}2
+foo2
+
+How do you use conditional statements in a shell script?
+Example: if-else, elif.
+Write a script to check if a file exists.  ---> test -f "tmp.txt or -d, -e etc
+Explain the use of loops (for, while, until) in shell scripting.
+Example: Iterate over a list of files in a directory.
+3. File and Directory Management
+How do you read and write to a file in a shell script? -----> ['>'overwrites, '>>' append][read- cat, while IFS=read -r line; do]
+Write a script to find the largest file in a directory.
+-->find . -type f -exec du -h {} \; | sort -k1 -h
+To find all files that are larger than 100MiB (this is not 100MB, see here if you are confused):
+find / -size +100M -ls
+the command below will display the largest 5 files in the folder $DIRECTORY:
+find $DIRECTORY -type f -exec ls -s {} \; | sort -n | tail -n
+find / -size +50M -type f -exec du -h {} \; | sort -n
+find . -mtime +2 -exec gzip {} \; 
+How do you check if a directory is empty using a script?
+Write a script to compress all .log files in a directory.
+4. Text Processing
+How do you use grep, sed, and awk in shell scripting?
+Example: Extract lines containing a specific word from a log file.
+Write a script to replace all occurrences of "ERROR" with "WARNING" in a file.
+Explain how to count the number of lines, words, and characters in a file.
+5. Process Management
+How do you find and kill a process by name using a shell script?
+Write a script to monitor CPU or memory usage of a specific process.
+Explain the difference between & and nohup in running background processes.
+6. Environment Variables
+How do you set and export environment variables in a script?
+What is the purpose of $PATH, and how do you modify it?
+Explain the difference between local and global variables in a script.
+7. Networking and System Monitoring
+Write a script to check if a server is reachable using ping.
+How do you use curl or wget in a script?
+Example: Download a file from a URL.
+Write a script to check if a specific port is open.
+How do you retrieve the system uptime and disk usage in a script?
+8. Log Management
+Write a script to rotate log files daily and keep the last 7 days of logs.
+How do you extract specific timestamps from a log file?
+Explain how to automate log compression and archival with shell scripts.
+9. Error Handling and Debugging
+How do you handle errors in a shell script?
+Example: Use of set -e, set -u, or error codes ($?).
+Explain the use of trap in shell scripting.
+What is the purpose of exec in debugging a script?
+10. DevOps-Specific Scenarios
+How would you automate a deployment process using a shell script?
+Write a script to fetch the latest code from a Git repository.
+Explain how you would write a script to restart a service if it is not running.
+How would you use a script to provision infrastructure (e.g., creating directories, setting permissions)?
+Write a script to monitor a log file in real-time for specific keywords.
+11. Advanced Shell Scripting
+What are subshells, and how are they used in scripting?
+Explain the difference between > and >> in redirecting output.
+How do you handle parallel execution in a script?
+What is the use of xargs in a script?
+Write a script to encrypt and decrypt files using openssl.
+12. Automation and CI/CD
+How would you use a shell script in a Jenkins pipeline?
+Write a script to check if Docker is installed and start a container.
+How would you use shell scripting for Kubernetes resource management (e.g., kubectl commands)?
+Explain how you can integrate shell scripts into Ansible playbooks.
+Tips for Preparation
+Practice Writing Scripts: Use scenarios similar to real-world DevOps challenges.
+Understand Tools: Familiarize yourself with commonly used tools like grep, awk, sed, and curl.
+Know Best Practices: Write clean, modular, and well-documented scripts.
+Debugging Skills: Learn to debug and troubleshoot issues effectively using bash -x and set options.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

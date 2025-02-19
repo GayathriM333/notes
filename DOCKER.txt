@@ -1,0 +1,37 @@
+containers works like virtual machine which doesnot contain OS instead it has images 
+containerization is process of packing an application with it dependencies
+Image = war+java+tomcat+mysql
+Docker uses containers on Host OS to run the application
+
+steps:
+launch ec2 instances with security group all traffic
+yum install docker -yum
+systemctl status/start docker  or service docker start
+
+git - code - github
+docker - image - dockerhub
+
+docker architecture:
+components are : client(docker run,pull,build), docker host(container,images,daemon),registry
+
+Docker commands:
+docker images ->to know how many images are there
+docker pull imagename -> to download image from dockerhub
+docker run -itd --name <contName> ubuntu  [itd creates shell in containers to execute cmds]
+docker run -itd --name <contNAme> -p 8081:80 <imageName> [8081-host port(any), 80 is container port(depends on image){ application cannot run without port number}
+**we should not give same ports to the containers
+docker ps -n 3[latest 3 containers]
+docker stop <contID>/<contName>
+docker exec -it <contName> bash[to go inside of the container]
+docker ps, docker ps -a(view all container including stopped, docker start $(docker ps -a) 
+docker kill <contname>
+stop the container then - docker rm -f <contname>
+docker rmi <image> --- if any container is created using this image. we cannot delete this image
+** we can create image using container
+docker commit <contname> <imageName(our wish)> ----[to create image from container]
+docker rename <contoldname> <cont_newname>
+****write docker file to run application
+docker file used to automate docker images. A text based file consists components
+Docker File Components: FROM,MAINTAINER,LABEL,ADD,COPY,RUN,CMD,ENTRYPOINT,ENV,ARG,EXPOSE,WORKDIR,VOLUME
+
+
