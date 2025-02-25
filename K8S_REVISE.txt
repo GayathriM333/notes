@@ -1,0 +1,375 @@
+1.difference btw docker and k8s
+2. k8s architecture: api server, etcd, scheduler, controller manager: node,replication,service. --> master node
+kubelet, kubeproxy, pods and containers --> worker nodes
+3. minikube, kops, aws EKS.
+4. pods creation - 2ways - cmd(imperative) and manifestfile(declarative)
+first way is :kubectl run pod_name --image image_name
+second way is:
+---
+apiversion: v1
+kind: Pod
+metadata:
+  name:  pod3
+  labels:
+    cloud=azure
+spec:
+ containers:
+   -name: cont1
+    image: ngnix
+	ports:
+	  -containerPort: 80
+	  
+kubectl create -f pod.yml / kubectl apply -f pod.yml
+-> kubectl get pods
+-> kubectl api-resources[ to know all resources of k8s ]
+->kubectl get po -o wide[full info of pod]
+->kubectl describe pod pod1
+->kubectl exec -it podname --bash
+->kubectl delete pod podname/--all
+-------------------------------------------------------------------
+1.multinode cluster setup by kops:
+install aws cli, install kops and kubectl
+KOPS: entire infrastructure will be created like ec2, autoscaling groups, loadbalancers,vpc, security groups
+IAM (create role - admin permission - attach it to ec2 instance  [inorder to create infra aws permissions allowed by IAM-identity access management]
+S3 bucket - simple storage service - to store data - to create: aws s3 mb s3://name.k8s and enable bucket versioning
+-> export KOPS_STATE_STORE=s3://name.k8s [to mention data from kops store in a particular bucket
+----------------------------------------------------------------------------
+to create kops cluster:
+->kops create cluster --name name.k8s.local --zones us-east-1a --master-size t2.medium --node-size t2.micro --master-count 1 --node-count 2
+->kops update cluster --name name.k8s.local --yes --admin
+->kubectl get nodes
+----------------------------------
+labels:
+kubectl get po --show-labels
+kubectl get po -l project=azure
+label selectors - set based, equality based
+node selector:
+------------------------------------------
+to increase nodes: kops edit -ig --name=name.k8s.local nodes-us-east-1a --> edit max size then - kops update cluster cmd
+----------------------------
+k8s service: method of exposing pods in cluster. each pod gets it own ip address but we need to access app from ip of node
+types: cluster IP, NodePort,LB
+access pod from inside cluster - clusterip otherwise  if we want to expose externally use nodeport or LB.
+
+vi svc.yml
+
+---
+apiversion: v1
+kind: service
+metadata:
+  name: svc1
+spec:
+ type: NodePort/LoadBlanacer
+ selector:
+    cloud=azure
+Ports:
+ -port: 80
+  targetPort: 80
+-->kubectl create -f svc.yml
+-----------------------------------------------------------------------------------------------------------------------------------
+drawback: in above method we can be able to create a pod but what if we delete pod. once we delete pod we cant access pod. to overcome this we have RC,RS,Deployments,DAEMON SETS etc.
+replicas in kubernetes:replication and autoscaling are primary features.it means when pods desired state is set to 3 then any of the pods fails then new pod will be created.
+Replication: responsible  for managing the pod lifecycle. will make sure pods are always up.if there were too many pods,RC will delete extra pods and viceversa
+Replication Controllers use labels to identify the pods that they are managing. need to specify desired no of replicas
+RC ->pods->containers->apps
+vi rc.yml
+---
+apiVersion: v1                                          
+kind: ReplicationController                                        
+metadata: 
+  name: flm
+spec:
+   Replicas: 3
+   selector: 
+     app: swiggy
+    template:
+	   metadata:
+	     label:
+		   app: swiggy
+     specs:
+	   containers:
+	     - name:  cont1
+		   image: shaikmustafa/cycle
+		   ports:
+		      -containerPort: 80
+			  
+kubectl create -f rc.yml
+kubectl get rc
+kubectl get po
+to expose application present in pod, we write service file
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: flmsvc
+spec:
+  type: NodePort
+ selector:
+   app: swiggy
+  Ports: 
+    port: 80
+    targetPort: 80
+	
+kubectl get all
+kubectl delete po -all 
+kubectl scale rc flm --replicas=4  [ this is not autoscaling ]
+Drawback: RC works based on equality based selector but RS works based on set based selector
+vi rs.yml
+---
+apiVersion: v1
+kind: ReplicaSet
+metadata: 
+    name: RS
+spec:
+   replicas: 4
+   selector: 
+     matchlabel:
+	   app: swiggy
+	Template:
+	   metadata:
+	     labels:
+		   app: swiggy
+      specs:
+	    containers:
+		  - name: cont2
+		    image: httpd
+			Ports:
+			  -containerPort: 80
+			  
+kubectl get rs / kubectl get rc
+kubectl describe rs rsname
+kubectl get rs -o wide
+kubectl delete rs rsname --cascade=orphan  [ to delete rs but not pods- now if we delete pod then new pod will not be created automatically
+Drawbacks: Autoscaling, Rollback and downtime will be fixed by deployment
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Deployment:It has all features of ReplicaSet and some additional features like updating and rollbacking to particular version. We can do it without downtime. we can update container image or configuration of application.
+It provides features such as versioning and pause feature. Scaling can be done manually or automatically based on metrics.
+Now, Deployment -> ReplicaSet->pod ->containerPort
+Manifest file for deployment:
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: flm
+spec:
+  replicas: 3
+  selector:
+  matchlabels:
+     app: swiggy
+  template:
+    metadata:
+	 labels:
+	   app: swiggy
+    specs:
+	  containers:
+	    - name: cont4
+		  image: ngnix
+		  Ports:
+		   -containerPort: 80
+kubectl create -f deployment.yml
+kubectl get deployment
+to access application,we have to expose by writing service file
+Autoscaling practical: 
+cmd: kubectl autoscale deployment/flm --min 3 --max 6
+kubectl get po
+kubectl get hpa [ horizontal pod autoscaler -target 80% that means if load is 80% then new pod will be created]
+two types of scaling : horizontal scaling(increasing no of pods) && vertical scaling(increasing specifications of pods like cpus and ram)
+kubectl set image deployment/dep_name cont4=shaikmustafa/cycle ->to change the image of the container of deployment
+kubectl rollout status deployment/flm 
+--> backend process ---- deployment--- create RS(3)--- create PODS(3)---create  container
+RS - ngnix image - 3 pods (deleted)
+New RS - cycle - 3pods running(these pods will be deleted when image gets updated
+New RS(created) - Dm- 3pods creates and running
+
+Now to rollback to specific  version : kubectl rollout undo deployment/<dep-name> --to-revision=2 [deployment maintains history]
+kubectl get rs && kubectl rollout history deployment/<dep-name>
+kubectl rollout pause deployment/<dep_name> [application will not get updates]
+kubectl rollout resume deployment/name
+to delete cluster : kops delete cluster --name name.k8s.local --yes
+---------------------------------------------------------------------------------------------------------------------------------------------
+->create kops cluster
+->kubernetes volumes: like emptydir, hostpath,PV & PVC
+we attach volume(data) to pod so how many containers inside the pods present.. all get the data replicated 
+if pod gets deleted, then data inside volume gets deleted. so when new pod gets created with new volume then there will be no previous pod data. so to overcome this we use k8s volume concept.
+write deployment manifestfile:
+---
+apiVersion: apps/v1
+kind: deployment
+metadata: 
+  name: flm
+ spec:
+   replicas: 1
+   selector:
+   matchlabels:
+     app: swiggy
+   Template:
+      metadata:
+	    labels:
+		 app: swiggy
+    specs:
+	  containers:
+	   - name: cont1
+	     image: ngnix
+		 command: ["/bin/bash", "-c", "while true; do echo welcome; sleep 5; done"] ----> if we are creating 2 containers but we have pass cmd
+		 VolumeMounts:
+		   - name: myapp
+		     mountPath: "/opt/jenkins"
+			 
+		- name: cont2
+	     image: httpd
+		 command: ["/bin/bash", "-c", "while true; do echo welcome; sleep 5; done"] ----> if we are creating 2 containers but we have pass cmd
+		 VolumeMounts:
+		   - name: myapp
+		     mountPath: "/etc/docker"
+		 
+	  volumes:
+	   - name: myapp
+	     emptyDir: {}
+->kubectl create -f deployment.yml
+kubectl get deployment
+kubectl get po
+kubectl exec -it podname -c cont1 -- bash
+if we create files in mount path /opt/jenkins then the data will be replicated in cont2 /etc/docker mount path && vice versa
+now if we delete pod then new pod created then volume with no previous created. empty dir volume with no data will be created when new pod created
+EMPTY DIR: share volume within container only. data will be accessible until pod is running
+HOSTPATH:attach volume to Host server (not pod)
+volumes:
+  - name: myapp
+    hostPath:
+	    path: "/tmp/kubedata"
+--->if server is deleted then data will be lost. to resolve this we use PV(persistent Volume) & PVC(persistent volume claim)
+we use cloud to store data. EBS(Elastic block storage)
+EBS 100GB - PV 20GB DEV - multiple PVC 5GB or 2GB (set limits to pod 2GB then pod will search for suitable PVC)
+now create volume - size, availability zone, name tages
+create pv using volume ID
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata: 
+    name: pv1
+spec:
+    capacity:
+	  storage: 5Gi
+	accessModes:
+	  - ReadWriteOnce
+	PersistentVolumeReclaimPolicy: recycle
+	awsElasticBlockStore:
+	  volumeID: <volID>
+	  fsType: ext4
+kubectl create -f pv.yml
+kubectl get pv  [pv-5pvcs limit]
+manifest file for pvc.yml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+   name: pvc1
+spec:
+   accessModes:
+       - ReadWriteOnce
+   resources:
+       requests:
+	    storage: 2Gi
+->kubectl create -f pvc.yml
+kubectl get pvc
+note: pv-pvc-pods[ have to mention pvc in pod
+In deployment manifest file:
+
+volumes:
+ - name: myapp
+   persistentVolumeClaim: 
+      claimName: pvc1
+	  
+kubectl delete deployment flm
+kubectl create -f deployment.yml [ old pods terminated and new pods running]
+now create second pvc then it will pending state and when this pvc is attached to any pod then it will be in bound state
+
+AccessModes: determines how many pods can access PV or PVC's simultaneously
+1.ReadWriteOnce: allows only single pod to read and write (eg: created deployment and PVC - replicas are 2 then only one pod has rights to read&write data
+2.ReadonlyMany: allows multiple pods to read from pv or pvc but not allow them to write
+3.ReadWriteMany: allows multiple pods to read and write to pv or pvc simlutaneously.
+4.Execute: allows pod to execute data on PV or PVC but not read or write.
+-----------------------------------------------------------------------------------------------------------------------------
+ConfigMaps: store config data in keypairs within k8s but data should be non-confidential(confidential data should be kept in secrets)
+creation : 2 ways - cmd and manifest file
+In cmd mode 4 ways: literal,file,env file, folder
+1) literal:  ->kubectl create cm <cmName> --from-literal=course=devops --from-literal=trainer=mustafa [trainer is variable and mustafa is value]
+kubectl get cm
+kubectl describe cm <cmNAme>
+Lets attach this configMap to any of the pod
+---
+apiVersion: v1
+kind: Pod
+metadata:
+   name:  pod1
+spec:
+   containers:
+     - name: cont1
+	   image: ngnix
+       envFrom:
+	    -  configMapRef:
+		      name: cmName [ all keys in configMap ]
+	or
+	  env:
+	  - name: flm
+        valueFrom:
+           - configMapKeyRef:   [ single value in CM ]
+                  name:  cmName
+                  key: Trainer				  
+kubectl exec -it pod1 -- bash
+printenv			
+2) File: create file and enter all the details
+kubectl create cm filecm --from-file=<filename>
+3) EnvFile: create env file withname db.env
+write all the details
+-kubectl create cm envcm --from-env-file=db.env
+4) folder - create folder [file1, file2]
+kubectl create cm foldercm --from-folder=<foldername>
+Declarative Way 2) MAnifest file
+---
+apiVersion: v1
+kind: configMap
+metadata: 
+   name: cm1
+  data:
+   DB_URL=
+   KEY=
+kubectl create -f cm.yml
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+Namespaces: 
+
+		
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+------------------------------------------------------------------------
