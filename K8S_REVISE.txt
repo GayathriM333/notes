@@ -337,39 +337,150 @@ metadata:
 kubectl create -f cm.yml
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 Namespaces: 
+isolate objects in kubernetes
+pre-existed k8s namespaces- deafult, kube-system(contains kube-controller-manage,kube-scheduler,kube-dns etc), kube-public(used to share non-sensitive info)
+kubectl get ns
+2 ways to create namespace - imperative and declarative
+kubectl create ns dev
+kubectl describe ns dev
+kubectl run pod-2 -n dev --image=ngnix
+kubectl config view --minify (to know in which ns we are currently)
+kubectl config set-context --currrent -namespace=dev
+kubectl get po -n prod[ if we are in dev ns then using this cmd we can see pod ]
+manifest file:
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+     name: uat
+->kubectl create -f ns.yml
+->kubectl run pod1 -n bank --image=ngnix
+manifest file create pod mention namespace
+---
+apiVersion: v1
+kind: Pod
+metadata:
+    name: pod2
+	Namespace: bank
+----> DAEMON SET:
+It will create single pod in each worker node in a cluster for monitoring cluster metrics
+---
+apiVersion: v1
+kind: DaemonSet
+metadata: 
+   name: dm
+spec:
+  Selector:
+  matchLabel:
+     app: swiggy
+  Template:
+     metadata:
+	   Labels:
+	     app: swiggy
+	spec:
+	   containers:
+	    - name: monitor
+		  image: ngnix
+->kubectl create -f daemonset.yml
+-> kubectl get ds
+----------------------------------------------------------------------------------------------------------
+RBAC: role based access controller
+it is critical security feature in kubernetes that allows you to define and manage access to resources based on roles and permissions. 
+2 types of account: user account and service account
+to create user: client certificates, bearer token,authenticatingproxy,http basic auth
+authentication - permission to login, authorization - permission to work on resources
+->minikube - create certificate. we get key,csr,crt
+->create user - kubectl config set-credentials <username> --client-certificate=username.crt --client-key=username.key
+kubectl config set-context <contextname> --cluster=minikube --user=mustafa
+kubectl config view -> to know the user
+kubectl config set-context --current --namespace=dev [to change namespace]
+kubectl config use-context <contextname> --> to switch another user
+ROLE(used to give permissions to a specific namespace) -CLUSTERROLE(all namespaces permission),ROLEBINDING(attaching role to a user)-CLUSTERROLEBINDING(cluster role attach to user)
+
+eg: mustafa (user) - context(mycontext)- namespace(Dev) - role(for dev ns) - rolebinding ( mustafa -> dev role)
+---
+apiVersion:rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+    name: dev-role
+	namespace: dev
+Rules:
+-  apiGroups: ["*"]
+   resources: ["pods","deployments"]
+   verbs:  ["get","list","create","delete"]
+->kubectl create -f role.yml
+we can also add give pods (create permissions) and deployment(create and delete). we can add Rules yml with same syntax
+to check - kubectl get roles -n dev
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind:
+metadata:
+   name: dev-role-rolebinding
+   namespace: dev
+subjects:
+- kind: User
+  name: mustafa
+  apiGroups: rbac.authorization.k8s.io
+roleRef:
+- kind: Role
+  name: dev-role
+  apiGroups: rbac.authorization.k8s.io
+->kubectl create -f rolebinding.yml
+->kubectl get rolebinding -n dev
+
+CLUSTER-ROLE:
+---
+apiVersion: rbac.auth.k8s.io/v1
+kind: ClusterRole
+metadata:
+    name: cluster-role-1
+rules:
+- apiGroups: ["*"]
+  resources: ["pods","deployments"]
+  verbs: ["get","create"]
+->kubectl create -f clusterrole.yml
+---
+apiVersion: rbac.auth.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+   name:  cluster-role-bindng-1
+subjects:
+- kind: User
+  name: mustafa
+  apiGroup: rbac.auth.k8s.io
+roleRef:
+- kind: ClusterRole
+  name: cluster-role-1
+  apiGroup: rbac.auth.k8s.io
+->kubectl create -f clusterrolebinding.yml
+-----------------------------------------------------------------------------------------------------------------------------------------
+HELM (Package Management Tool)-it is k8s package manager in which mutiple numbers of yaml files such as frontend and backend under one roof.
+Key Concepts: CHARTS,Templates,Values and Repositories
+predefined helm repo: helm repo add <reponame> <repo_url>
+helm repo list
+helm repo update[ mandatory step becoz new update receive ]
+to create our own repo:
+helm create devops -> by executing cmd we get folder which consists chart.yml(version using for helm and its name),charts,templates(deployment.yml.hpa.yml,service.ymletc),values.yml[we mention app specific values in values.yml & pass values to templates]
+install helm repo : execute cmd where charts.yml present ----> helm install <releasename> .  ( now all manifest file will get executed) we get app url also after deployment
+helm upgrade <relName> . [when we update anything like image]
+helm history <rel_name>
+helm rollback <rel_name> 3
+helm install devops --debug --dry-run
+helm template .
+Prometheus & Grafana Installation:
+----------------------------------
+prometheus : collects all metrics from clusters(raw format)
+Grafana: converts data to dashboard
+---> install metrics server, prometheus, grafana repo download
+--->helm repo update 
+helm install <releasename> <reponame> <restcmd>[ pods,services, daemonset, replicaset,nodeexporter,deployment, statefulset]
+grafana url - integrate with prometheus - add datasource(enter url_
+->go to dashboard - click on new-import --1860 port number(cluster info) - click on load- select prometheus (click on import)
+all cluster info will be present
+also - 315 port number(overall cluster metrics) & 6417 port number (no of deployments, nodes, pods(failed,running),containers)all servers and single also we can get metrics
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 		
--------------------------------------------------------------------------------------------------------------------
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-------------------------------------------------------------------------
