@@ -1,0 +1,398 @@
+Intro:
+Good evening, and thank you for giving me this opportunity to be interviewed for this position. My name is Gayathri. I completed my B.Sc. in Computer Science in 2019, and soon after, I joined Wipro as a WebSphere Administrator, where I worked for around 3 years. For the past 3.5 years, I’ve been with Cognizant as a Tech Lead, primarily focusing on WebSphere and Tomcat administration. This gives me a total of 6.5 years of hands-on experience in middleware technologies.
+
+I’ve been actively involved in WebSphere lift-and-shift migrations from on-prem to cloud servers, Tomcat upgrades using Ansible playbooks, and supporting all BAU activities including performance tuning, troubleshooting production issues.
+
+Having said that i'm confident that i have skills and qualities to excel in this role as i can also manage significant work load. 
+I would describe myself as someone who is committed to continuous learning and delivering value.
+I'm excited about the opportunity to bring my expertise to your organization and support its middleware infrastructure.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------
+reason I am looking for a change is that I feel like now is the correct time to expand my scope of work. I have worked in my current company for a quite long time, and I am grateful for all the build experience I got. I still wanted to go beyond and explore more tools if possible also take up new challenges and responsibilities.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+WAS version - 8.5.5.22/8.5.5.27 - latest version (8.5.5.28) 
+9.0.5.14 - latest version(9.0.5.25)
+IBMIHS - 8.5.5.26 - latest version (8.5.5.28)
+Linux version - RHEL 8 - cat /etc/os-release
+Tomcat version - 9.0.107 - latest version (9.0.108)
+Apache - 2.4.53 - latest version(2.4.65)
+WAS 9 supports JAVA EE7 and 8.5 supports JAVA EE6 and multiple security enhancements
+
+Fix packs resolve issues that have been identified through internal testing and customer-reported problems. Fix packs are a crucial way to address security vulnerabilities
+
+Issues you faced in your project:
+
+1. Java 1.7 is not compatible with WAS 8.5.5.22+ 
+
+./imcl uninstall com.ibm.websphere.IBMJAVA.v70_7.0.10070.20200825_1806 -installationDirectory /export/local/opt/soft/was85dev/WebSphere/AppServerBin -sVP
+
+managesdk -listAvailable
+managesdk -enableProfile -profileName <yourProfile> -sdkname 1.8_6
+We can do this through console as well.
+application servers - managesdk - change it to 1.8
+
+7. imcl corrupted
+./install com.ibm.cic.agent -repositories ../repository.config -installationDirectory /export/local/opt/soft/IBMIM/installationmanager -dataLocation /export/local/opt/soft/IBMIM/datalocation -accessRights nonAdmin -acceptLicense -showVerboseProgress
+
+8. Error while executing versionInfo.sh/managesdk.sh
+/export/local/opt/soft/was85dev/WebSphere/AppServerBin/bin/sdk/_setupSdk.sh: line 36: /export/local/opt/soft/ was85dev/WebSphere/AppServerBin/bin/sdk/_setupsdk1.7_64.sh: No such file or directory
+
+export/local/opt/soft/was85dev/WebSphere/AppServerBin/properties/sdk/
+cp -pr cmdDefaultSDK.properties cmdDefaultSDK.properties_bkp
+vi cmdDefaultSDK.properties
+change it COMMAND_DEFAULT_SDK=1.7_64 to COMMAND_DEFAULT_SDK=1.8_64_bundled
+
+2. Dependency issues like below tls 1.2 is not compatible with 8.5.5.26 IBMIHS
+
+IBMIHS upgrade -consumer app not working -pdf download ->connecting to app -> 85525 lower version ->TLS1.2 below is not compatible 8.5.5.26(TLS issue)
+->ssl handshake -> mutual auth--- provider(personal certs in consumers) && cipher compatibilities && TLS version -root certs - cert proper added(CN name)
+
+SSLProtocolDisable SSLv2 SSLv3 TLSv1 TLSv1.1
+SSLProtocolEnable TLSv1.2
+
+SSLCipherSpec TLS_RSA_WITH_AES_256_CBC_SHA
+SSLCipherSpec TLS_RSA_WITH_AES_128_CBC_SHA
+
+(Use forward secrecy (e.g., ECDHE)
+Use AES with 128 or 256-bit keys
+Use SHA-2 family for hashing (e.g., SHA-256)
+Avoid outdated algorithms like RC4, MD5, DES, or 3DES)
+
+For WAS, ensure JDK8 is installed and configured, update ssl protocol - TLSv1.2
+Go to: Security > SSL certificate and key management > SSL configurations > NodeDefaultSSLSettings > Quality of protection (QoP)
+Use strong suites like SSL_RSA_WITH_AES_256_CBC_SHA.
+
+3. while doing migration, we get 404 error which means virtual host misconfigurations.
+
+
+4. We use pega applications, so was8.5 & jdk 8 upgraded then application is not accessible because pega 6 lower version.
+5. tomcat webapps folder root we have application specific configurations but while upgrading the tomcat that was missed. So, application does not route to correct url
+
+6. upgraded java openjdk 7 to openjdk 8.. code compilation then app working fine.
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------
+WAS install from the scratch:
+
+RAM: Minimum 4 GB (8 GB recommended)
+Disk: At least 15–20 GB free
+JDK: Java 8 or later (WAS can bundle its own)
+
+1. Install IM - unzip agent.installer.linux.gtk.x86_64_*.zip -d /app/soft
+modify install.xml with installLocation /app/soft/installationManager customized path
+run the installation cmd: ./userintc -acceptlicense --launcher.ini user-silent-install.ini -log install.xml
+verify version /app/soft/installationManager/eclipse/tools/imcl -version
+1.9.2.8
+2. Install Websphere Binaries:
+./imcl install com.ibm.java.jdk.v8_8.0.8025 com.ibm.websphere.ND.v90_9.9.5005 -repositories <repo.config path> -installationDirectory <AppserverBin> -accpetlicense -showVerboseProgress
+3. create DMGR profile
+/export/local/opt/soft/was85modl/WebSphere/AppServerBin
+./manageprofiles.sh -create -templatePath /export/local/opt/soft/was85modl/WebSphere/AppServerBin/profileTemplates/dmgr -profileName uwgp2_modl_dm -profilePath /export/local/opt/soft/was85modl/WebSphere/uwgp2_modl_dm -cellName uwgp2_modl_cell -nodeName uwgp2_modl_dm -hostName ftwlmscimw89.r1-core.r1.aig.net -isDefault=true -startingPort 60000 -validatePorts
+
+Creating Node on ftwlmscimw89
+/export/local/opt/soft/was85modl/WebSphere/AppServerBin
+./manageprofiles.sh -create -templatePath /export/local/opt/soft/was85modl/WebSphere/AppServerBin/profileTemplates/managed -profileName uwgp2_modl_node -profilePath /export/local/opt/soft/was85modl/WebSphere/ uwgp2_modl_node -nodeName mw89_uwgp2_modl_node -hostName ftwlmscimw89.r1-core.r1.aig.net -isDefault=true -startingPort 60050 -validatePorts
+
+ 4. Federation is called - adding application server node into cell.
+start DMGR now and execute below steps
+/export/local/opt/soft/was85modl/WebSphere/uwgp2_modl_node/bin
+./addNode.sh ftwlmscimw89.r1-core.r1.aig.net 60003 -startingport 60050
+
+5. create cluster from the console and configure all the app specific configurations
+
+-------------------------------------------------------------------------------------------------------
+
+First of all We have artifactory url. where we can download the binary files and place it in server and unzip it.
+Fixpack: prerequisities min 10GB disk, 4GB RAM
+We have to make the command ready.. for which we need offering id and product version where we can get it from repository.config file we get it after unzipping the file.
+go to imcl path - cd /home/usradmin/IBM/InstallationManager/eclipse/tools/
+./imcl -install <offeringID_productversion> -repositories <repository.config path> -installationDirectory <AppserverbinPath> -acceptLicense -svP
+
+once it is done, we have to check the WAS version, go to bin path and ./versioninfo.sh and next go to bin path 
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+FP upgrade 
+dmgrbin path - ./backupconfig.sh -path </tmp/dmgrprofile.tar.gz>
+was85 folder bkp, jvm stop (stopnode.sh or kill),imcl command, clearclasscache - 18 version cache / OSGcfgninit- conf initialization (best practice) (node-bin and dm-bin) - logs checks if nodeagent is not up
+
+To rollback, we use ./imcl rollback <perviousversion_offering id> -repositories <previous version repositorypath> -installationDirectory <AppserverBin> -acceptlicense -svP
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+IHS-WAS Integration:
+
+install WAS and IBMIHS and plugin
+
+./imcl install com.ibm.websphere.IHS.v85_8.5.5000.20130514_1044,arch.64bit -repositories /export/local/opt/soft/software/TEMP_IHS_INSTALL/TEMP_IHS855_INSTALL_021124045935/repository.config -installationDirectory /export/local/opt/soft/IBMIHS85 -properties user.ihs.httpPort=80,user.ihs.allowNonRootSilentInstall=true -acceptLicense -showVerboseProgress.
+
+./imcl install com.ibm.websphere.PLG.v85_8.5.5000.20130514_1044,com.ibm.jre.6_64bit -repositories /export/local/opt/soft/software/TEMP_PLUGIN_INSTALL/TEMP_PLUGIN855_INSTALL_021124020626/repository.config -installationDirectory /export/local/opt/IBMIHS85_Plugins -acceptLicense -showVerboseProgress.
+
+	Configure webserver in admin console:
+Servers → Server Types → Web Server
+Click New and enter webserver name, type-ibm http, select node where ihs is installed, specify ihs config directory - /opt/ibm/httpserver/conf
+
+	Update httpd.conf in ihs server
+servername, port listen, server root, document root(static content), logs, virtual host(ssl,servername, port) kdb path, plugin path,load modules(ssl, plugin)
+
+LoadModule was_ap22_module /opt/IBM/WebSphere/Plugins/bin/64bits/mod_was_ap22_http.so
+WebSpherePluginConfig /opt/IBM/WebSphere/Plugins/config/webserver1/plugin-cfg.xml
+
+Ssl.conf -p12 file path: Private Key, p12, ssl engine ON,ciphers.
+
+	Deploy applications then, generate and propagate plugin. [for first time only]
+
+we have a option where in webserver - plug-in properties - check box the option called automatically generate and propagate plug-in file.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Virtual Host: maps hostnames and port numbers to web applications. This is how we access the application.
+Context root: A context root is the first part of a web application's URL that tells the server which application to route the request to.
+If your app has a context root of /shop, then it will be accessed like this:
+http://yourserver.com/shop
+context should be unique for each application.
+
+virtual host in WAS console, plugin file and httpd.conf file all these should be matched. if not we will get error
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+Generic JVM argument:
+Application servers - select app server - java and process management - process definition - java virtual machine
+
+min heap & max heap
+
+-Xms1000m -Xmx1000m -XX:PermSize=256m -XX:MaxPermSize=256m -XX:MaxNewSize=500m -XX:NewSize=500m -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:/home/sherpa/Sherpa/Server/log/gc.log -XX:+HeapDumpOnOutOfMemoryError -Dlog4j.configuration=file:/path/to/log4j.properties
+-verbose:class -XX:HeapDumpPath=/path/to/dump 
+
+We mention min and max heap, specifies garbage collection, enables debugging, system properties like -Dapp.env=prod, logging configuration, class loading and memory
+
+-X is for jvm setting and -D is used to set system properties
+---------------------------------------------------------------------------------------------------------------------------------------------------
+default ports in WAS and IBMIHS
+
+IBMIHS ports:  
+80	Default HTTP port (non-secure)
+443	Default HTTPS port (secure)
+8008	IHS Admin Server (used for remote administration)
+8009	Optional AJP port (if using AJP connector to WAS
+
+9060	Administrative Console (HTTP)
+9043	Administrative Console (HTTPS)
+9080	Application HTTP port
+9443	Application HTTPS port
+8880    SOAP Connector port
+8879	Nodeagent port
+389(LDAP), 636(LDAP secure)
+----------------------------------------------------------------------------------------------------------------------------------------------------
+important configuration files:
+resources.xml:	   <WAS_PROFILE>/config/cells/<cell>/nodes/<node>/servers/<server>	Defines JNDI resources like JDBC providers, data sources, JMS, etc. 
+serverindex.xml:   <WAS_PROFILE>/config/cells/<cell>/nodes/<node>	Lists all ports used by the server. Useful for troubleshooting port conflicts.
+virtualhosts.xml:  <WAS_PROFILE>/config/cells/<cell>	Defines virtual host mappings for applications.
+variables.xml:	<WAS_PROFILE>/config/cells/<cell>/nodes/<node>/servers/<server>	Contains WebSphere environment variables used in configuration.
+security.xml:	<WAS_PROFILE>/config/cells/<cell>/security.xml	Contains global security settings (e.g., LDAP, SSL, user registry). DB ID and PSWD's
+server.xml:    <WAS_PROFILE>/config/cells/<cell>/nodes/<node>/servers/<server>	Main configuration file for each application server (JVM). Defines ports, applications, services, etc. jvm settings
+soap.client.props(used for administrator communication between nodes and WAS cell)- to disable pswd for admin console, com.ibm.SOAP.securityEnabled property=false)and 
+ssl.client.props: Used for configuring SOAP and SSL client properties - to configure the security settings for administrative communication and client auth
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+GC Policy: Automatic memory management process performed by JVM. It reclaims the memory used by objects that no longer needed.
+ Gencon -  default GC policy in WAS. It is designed to minimize pause time. Suitable for large heaps that requires low pause
+Other gc policies:  Balanced,optthruput, incremental,genrt 
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Linux commands: 
+To create heap dump : jmap -dump:format=b,file=/app/logs/ocuk_1/integ/tmp/heapdumps.hprof 507641
+To create thread dump – kill -3 <PID>
+To delete logs : find . -type f -name "*.log" -mtime +10 -exec gzip {} \;
+telnet algsascs3655005.r1-core.r1.aig.net:8088
+top(cpu), free -m (memory), swap memory-portion of hard disk that is used as virtual memory when physical RAM is fully used 
+tar -zcvf wp85prod_bkp_03122022.tar.gz wp85prod_bkp_03122022
+dstat to check cpu,memory,disk I/O, network
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+datasource creation:
+first we need to create JDBC providers -  IBM DB2(db2cc.jar), microsoft sql(mssql-jdbc.jar), oracle(ojdbc8.jar) etc
+select DB type, provider type, class path (we need to place jar files)
+ 
+next create datasource: provide datasource name, JNDI name, select JDBC provider, dbname,port,servername
+
+test connectivity
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+LDAP registry: this uses external LDAP server to store user and group information
+Federated Repository: allows integration of multiple security repositories such as LDAP or custom registries
+
+Steps to configure security repositories:
+Go to security -> Global security -> enable or check the enable administration security - 
+Standalone LDAP registry - First we get hostname, port number and certificates, bind Distuinguished Name, bind pswds. BASE DN
+Secure port(636) , not secure port (389). Primary Failover hostnames
+
+restart nodeagent & app server
+
+How to verify LDAP SSL connection is working from your server:
+openssl s_client -connect <hostname>:<port>
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+Troubleshooting:
+1. 404 - check virtual host, context root mapping, 503 - JVM might be down, 500 - analyze systemout.log and SystemErr.log, 502 - check plugin/network firewall.
+
+2. troubleshooting
+* 503 service unavailable - check if JVM is down, and plugin-cfg.xml is misconfigured. Try to regenerate plugin file and restart webserver.
+* JVM crash - check the logs and if you see OutOfMemory error then generate heapdumps and increase max heap size in the JVM options (-Xmx)
+* application failed to start - verify the application and try to redeploy it after clearing temp and wstemp folders. check for systemout.log for any exceptions/ deployment errors.
+* 404 error - contextroot or virtual host misconfigurations. verify if virtual host are configured correctly in WAS. regenerate plugin file.
+* 504 gateway timeout - check if app server is taking too long to respond. review jvm logs for bottlenecks. increase timeout settings 
+* session Affinity - verify if session affinity is enabled in plugin file <EnableSSLSessionID=true> or <AffinityRouting=true>. regenerate plugin file
+* Application slowness - check logs, heap & thread dumps generation
+* Nodeagent not starting: bin path - ./syncNode.sh <dmgrHost> <SOAPConnectorPort>
+
+
+httpd.conf - servername, port listen, server root, document root(static content), logs, virtual host(ssl,servername, port) kdb path, plugin path,load modules(ssl, plugin),{apache -proxy-reverseproxy)(apachectl - HTTPD=configuration path)
+
+
+
+Decommission:
+------------------------------------------------------------------------------------------------------------------------------------------------------
+How to enable SSL in websphere:
+---------------------------------------------------------------------------------------------------------------
+SSL configuration from the scratch: 
+
+generate private key - openssl genrsa -out server.key 2048
+generate CSR - openssl req -new -key server.key -out server.csr
+submit CSR to CA authority.
+
+configure SSL in websphere
+go to security - ssl cert and key management
+create keystore or import cert
+------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+Tomcat Interview Questions:
+Tomcat version - 9.0.108 and zulu java 11 (8+ anything)
+
+Architecture
+Catalina: Servlet container.
+Coyote: HTTP connector.
+Jasper: JSP engine
+
+Configurations:
+server.xml: Main config file (connectors, ports). 8080 for HTTP, 8443 HTTPS, 8005 for shutdown), AJP 8009 port
+web.xml: Web app deployment descriptor.
+context.xml: App-specific configuration.
+
+Troubleshooting
+Logs: catalina.out, localhost.log, manager.log.
+Common issues: Port conflicts, memory leaks, classpath errors.
+
+Production Outage: JVM crash → Check logs → Analyze heap dump → Restart → RCA.
+SSL Expiry: Alert → Generate new cert → Import to keystore → Update config → Restart.
+Slow App: Analyze GC logs → Tune heap → Check DB connections → Optimize code.
+
+Install tomcat steps: 
+we have tomcat binaries in artifactory link where we get them and place it in server.
+unzip the binaries and configure all the application specific configurations.
+we use setenv.sh where we define CATALINA_HOME, JAVA_HOME
+
+/bin - it has startup & shutdown scripts.
+/conf - configuration files (server.xml, web.xml, context.xml)
+/webapps - Default deployment directory of WAR files (can be changed in server.xml <HOST> element - appBase="webapps")
+/logs - log file (catalina.out, localhost.log)
+/temp - temporary files used by deployed applications.
+/work - compiled JSP files
+
+-----------------------------------------------------------------------------------------------------------------------
+* To deploy an application, we have to take backup and copy the war file to webapps directory.
+-------------------------------------------------------------------------------------------------------------------------------
+* Configure SSL:
+Generate privatekey
+Generate CSR, get it signed by CA. get the certificate 
+generate keystore with cert and private key 
+and enable HTTPS connector
+Restart Tomcat
+--------------------------------------------------------------------
+* In Tomcat we configure Data source in context.xml file 
+resourcename, type="javax.sql.Datasource", url, username, password etc
+-------------------------------------------------------------------------------------
+Monitor and tune performance in tomcat:
+ - monitor catalina.out and application logs, thread dumps, -Xloggc
+--------------------------------------------------------------------------------------
+handle log rotation: you can configure log rotation in logging.properties
+--------------------------------------------------------------------------------------
+AJP is to configure tomcat behind loadbalancer like apache etc
+used with mod_jk - worker.properties
+
+or 
+mod_proxy
+
+
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule proxy_ajp_module modules/mod_pro
+ 
+ 
+<VirtualHost *:80>
+    ServerName yourdomain.com
+
+    ProxyPreserveHost On
+    ProxyPass /app http://localhost:8080/app
+    ProxyPassReverse /app http://localhost:8080/app
+</VirtualHost> 
+
+ProxyPass - forwards request to app server
+ProxyPassReverse to handle redirects
+
+Sticky sessions (also called session affinity) ensure that a user's session is always routed to the same backend server during their interaction with a web application.
+<Engine name="Catalina" defaultHost="localhost" jvmRoute="tomcat1">
+
+    BalancerMember http://tomcat1:8080 route=tomcat1
+    BalancerMember http://tomcat2:8080 route=tomcat2
+    ProxySet stickysession=JSESSIONID
+
+------------------------------------------------------------------------------------
+common issues you've faced in tomcat -
+Memory leaks: used jmap to generate heap dumps
+port conflicts: identify using netstat or isof -i <port>
+SSL handshake error: Fixed keystore mismatch or invalid cert chain
+------------------------------------------------------------------------------------
+difference between tomcat and websphere
+
+tomcat is servlet container, lightweight and websphere is Full Java EE application server and complex
+
+----------------------------------------------------------------------------------------------------
+Tomcat-Apache integration:
+
+Using mod_jk:
+Install mod_jk on Apache.
+Configure workers.properties to define Tomcat workers.
+Update Apache’s httpd.conf or mod_jk.conf to route requests.
+Enable AJP connector in Tomcat’s server.xml.
+
+Apache: httpd.conf
+LoadModule jk_module modules/mod_jk.so
+JkWorkersFile conf/workers.properties
+JkLogFile logs/mod_jk.log
+JkLogLevel info
+JkMount /appname/* worker1
+
+worker.properties:
+worker.list=worker1
+worker.worker1.type=ajp13
+worker.worker1.host=localhost
+worker.worker1.port=8009
+
+<Connector port="8009" protocol="AJP/1.3" redirectPort="8443" />
+
+->loadmodule are useful for any tomcat integrations expecially with AJP and modular configurations-you only load what you need.
+mod_ibm_ssl.so	Enables SSL support in IBM HTTP Server
+mod_proxy.so	Enables proxying of requests
+mod_proxy_ajp.so	Used to forward requests to Tomcat via AJP
+---------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+ 

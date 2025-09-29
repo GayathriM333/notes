@@ -1,0 +1,329 @@
+Questions:
+--------
+Daily tasks: fixpack upgrades and tomcat version upgrades. Involved in major activities like lift and shift migrations for WAS applications. WAS set up for the application from the scratch. creating Datasources,deploying through jenkins or manual.
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+WAS/Tomcat/HTTP/APACHE versions
+Day to Day activities, issues which we face regularly, logs, Fixpack & issues& log file to check, Tomcat upgrade issues, WAS ND, horizontal and vertical scaling, cluster creations, Datasource creation and JDBC drivers which we use, SSL, Security, all the files like resource.xml, serverindex.xml, variables.xml, soap.client.props etc. 
+profiles, default port numbers, WAS-IHS integration i.e, plugin & what is present in Plugin file. what is swap, important linux cmds, disable security console, virtual host&context root, TLS & ciphers, diff btw tls and ssl.(on way ssl and 2 way ssl) 
+WAS installations, node federation- after federation what could be the reason for nodeagent not starting?
+security repositories, heap and thread dump analyzer.SSL handshake error.
+https to http migration. java jdk migration, ibm http and apache upgrade. three-tier architecture, log4j, vulnerability names, proxy-reverse proxy, app scan remediations, loadmodule ibm_ssl_module.cron jobs, automatic restarts, decommisions, WAS config backup, FFDC, application architecture,session affinity, cell & nodes& Nodeagent(managed and unmanaged node), sesssion timeout, httpd.conf file, how to change loglevel, class loader all.class are stored, how does app server knows DB connected, DR activity,log rotation, connection pool, web container,
+-how many ways you can deploy the application in WebSphere
+-Master repository
+request flow, how to send traffic to only one server(change jvm_weight=0 and comment that server in plugin file
+
+
+
+-> MQ cmds, datapower tasks
+-> ansible, jenkins
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+1. versions: WAS-8.5.5.18 to 8.5.5.22, Tomcat- 48 to 9.0.102, IBMIHS & APACHE 
+2. Day to Day activities - Deployments, scheduled restarts, troubleshooting, data source creation, configuration changes in tomcat,SSL
+3. What is WAS - provides infrastructure for running applications that run business.  
+-------------------------------------------------
+ND -napplication more than 1 servers , standalone - single sevrevr
+--> dmgr down - node sync does not work (master to locak repository)
+---------------------------------------------	
+ECC firewall (app server to db connectivity--> port enable that is firewall
+----------------------------------------------------------------------
+linux commands
+jvm arguments
+
+update installer before WAS8
+WAS 85 - IBMIM install -  - WAS installfirst we install base version - fixpack upgrade - 10GB(min space), running instances, AF (curl cmd), (offerings, natives,packegaed, reposrity.config,repositoru.xml (head cmd get product_id) --> (-log /tmp in imcl cmd for WAs install)-aboutthisfile.txt,versioninfo.sh(installation path ),appserver/bin/-historyinfo.sh
+--->profiles -bin directory -  manageprofile.sh -> dm, node-> node federation (nodeagnet) node/bin willbe created -cluster 2 nodes - JMS, DBclasspath jar files(JNDI unique), same name we use in data source
+---> troublesooting of test connectivity - rename JNDI 
+--->managesdks ,deployment - installed apps
+host not found - virtual host (uDNS or webserver host port, context root
+---logs path in jvm scope in websphere variables
+----------------------------------------------
+java - 8.5.5.18 to 22- 1.7 not compatible 
+backupprofile.sh & was85 folder bkp, jvm stop(stopnode.sh or kill), clearclasscache - 18 version cache / OSGcfgninit- conf initialization(best practice)(node-bin and dm-bin)- logs checks if nodegant is not up, IM -version issue 1.8 to 1.9 
+bug fix , secuirty, performce 
+IBMIHS upgrade -consumer app not working -pdf download ->connecting to app -> 85525 lower version ->TLS1.2 below is not compatible 8.5.5.26(TLS issue)
+->ssl handshake -> mutual auth--- provider(personal certs in consumers) && cipher compatibilities && TLS version -root certs - cert proper added(CN name) - 
+-----------------------------------------------------------------------------------------------------------
+webserver- more security - static content - 
+LB- WEBserver(kdb) -plugin- appserver(jks) - DB/MQ
+
+DNS url is not working - web hostname & port - CN mismatch ( modl cert to prod cert  - intermittent issue)
+key.sth -authentication(corrupt)
+------------------------------------------------------------------
+httpd.conf - servername, port listen, server root, document root(static content), logs, virtual host(ssl,servername, port) kdb path, plugin path,load modules(ssl, plugin),{apache -proxy-reverseproxy)(apachectl - HTTPD=configuration path)
+
+--------------------------------------------------------------------------------------------------------
+
+plugin - forwards request to app server 
+managemodules -deployment  -map webserver
+dmgr - gnerate - plugin create - dmgr file
+propagate - copy to paste in webserver from dmgr
+
+plugin - jvm name, cluster,virtual , ports, app name,context root,404, virtual host not found.
+-------------------------------------------------------------------------------------------------------------------------
+issues: port number unique(port conflict issue), jndi names under same cluster,
+-multiple applications can be deployed but context root must be diff
+-resources.xml under profile/cluster scope, security.xml(cert update, db id and pswd), server.xml(nodes scope -heap size)
+-exchange signer -dmgr to node
+-IO exception - certs add ( root separately and personal certs )
+-------------------------------------
+logs, details - any changes - reboot - slow applications ,working region
+intermittent issues, flow,db down, trace logs, 
+
+db library files missing
+
+All files paths like logs, resources.xml etc
+
+ldapp
+
+jvm arguments------
+min heap & max heap
+
+dumps analyse - 
+
+
+profile creation
+single cmd for all
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+splunk, mulesoft, datapower, mq, websphere, tomcat, weblogic, jboss, ssl
+
+AWS certifications, devops, shell scripting, ansible, autosys, dyna trace, ibm heap analyzer..
+
+
+
+
+
+
+
+
+tls 1.2 below in 8.5
+
+
+
+phd, hprof - heap --> 2gb
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------------------------
+
+
+
+
+
+
+
+
+
+
+dilip/saif - 8pm est 
+jenkins jobs for restart
+ocds issues they reach out 
+bringup tomcat -dm and nam - 12am est 
+nam and fni (mainframe fni enable)reindexing on saturday
+rdf, claims, cpw
+
+
+-----------------------------------------------------------
+
+
+confluence page - server details (cloud websphere to tomcat 
+brown field to green field) pega version remians same
+ aws account change
+
+-------------------------------------------webserver no, alb to jvm lb request share avthadhi
+------aws level routing side app access cloud team involve target group status chepali.. 
+-----------------sequence restart - model and prod mw team..
+jenkins url access for restart
+--------------------------------------------------------------------------------------
+issues - latency, slowness...network team or pcs team
+tomcat logs ---
+
+soft link-- ln -s 
+
+
+
+
+
+
+
+
+
+
+
+
+ Intermediate-Level Questions
+What is a ripplestart and when would you use it?
+How does clustering work in WAS?
+What is session persistence and how is it configured?
+How do you troubleshoot high CPU or memory usage in a JVM?
+What is node synchronization and why is it important?
+Can applications continue running if the DMGR is down?
+How do you enable SSL in WAS?
+What are the different types of logs in WAS and their purposes?
+How do you configure security realms and user registries?
+What is the difference between vertical and horizontal scaling in WAS?
+
+ Basic-Level Questions
+What is WebSphere Application Server (WAS)?
+What are the key components of WAS architecture?
+What is the difference between a node and a cell in WAS?
+What is the role of the Deployment Manager (DMGR)?
+How do you deploy an application in WAS?
+What is a node agent and what does it do?
+What is the purpose of the plugin-cfg.xml file?
+How do you configure a JDBC data source in WAS?
+What is the difference between a managed and unmanaged server?
+What is the administrative console and how is it used?
+
+ Advanced-Level Questions
+How do you tune JVM heap settings for performance?
+What is the difference between WebSphere Liberty and traditional WAS?
+How do you configure workload management (WLM)?
+How do you integrate WAS with LDAP for authentication?
+What are wsadmin scripts and how are they used for automation?
+How do you handle application failover in a clustered environment?
+What is the role of the service integration bus (SIBus)?
+How do you monitor and manage thread pools in WAS?
+What are the best practices for securing a WAS environment?
+How do you perform a rolling update in a production cluster?
+
+
+Here’s a step-by-step guide for integrating applications into IBM WebSphere Application Server (WAS), based on reliable sources and best practices:
+
+🔧 1. Prepare Your Environment
+Install WebSphere Application Server (WAS): Ensure WAS is installed and running.
+Install IBM HTTP Server (optional): For front-end web server integration.
+Install WebSphere Plugins: Required if integrating with IBM HTTP Server 1.
+📁 2. Create an Application Server
+Open the WebSphere Admin Console.
+Navigate to:
+Servers → Server Types → WebSphere Application Servers.
+Click New to create a new server.
+Provide a server name, select a node, and configure ports.
+Click Next, review the summary, and click Finish.
+Save the configuration.
+📦 3. Deploy Your Application
+In the Admin Console, go to:
+Applications → Install New Application.
+Choose the EAR, WAR, or JAR file to deploy.
+Select the deployment target (server or cluster).
+Configure context root, class loading, and JNDI bindings as needed.
+Click Finish and Save the configuration.
+Start the application from the Enterprise Applications section.
+🔄 4. Configure Resources
+JDBC Providers & Data Sources:
+Resources → JDBC → JDBC Providers → Add new.
+JMS Resources:
+Resources → JMS → Configure connection factories and destinations.
+Environment Entries:
+Resources → Environment → Environment Entries.
+🔐 5. Security Configuration (Optional)
+Enable Global Security:
+Security → Global Security.
+Configure LDAP or File-based user registry.
+Assign roles and permissions to users/groups.
+🌐 6. Integrate with IBM HTTP Server (Optional)
+Install WebSphere Plugins on the HTTP Server.
+Configure httpd.conf to load the plugin.
+Use the Plugin Configuration Tool to generate plugin-cfg.xml.
+Restart both servers.
+
+Step-by-Step Application Integration in WebSphere Application Server
+1. Start the Admin Console
+Open the WebSphere Integrated Solutions Console (usually at http://<hostname>:9060/ibm/console).
+Log in with administrative credentials.
+2. Create an Application Server (if needed)
+Navigate to:
+Servers → Server Types → WebSphere Application Servers.
+Click New.
+Enter a server name, select a node, and configure ports.
+Click Next, then Finish, and Save the configuration.
+3. Install the Application
+Go to:
+Applications → Install New Application.
+Choose the EAR, WAR, or JAR file to deploy.
+Select the deployment target (server or cluster).
+Configure:
+Context root (e.g., /myApp)
+Class loading policy
+JNDI bindings (if needed)
+Click Next, review settings, then Finish and Save.
+4. Configure Application Resources
+JDBC (Database):
+Resources → JDBC → JDBC Providers → Add.
+Create Data Source and test connection.
+JMS (Messaging):
+Resources → JMS → Add connection factories and destinations.
+Environment Variables:
+Resources → Environment → Environment Entries.
+5. Start the Application
+Go to:
+Applications → Enterprise Applications.
+Select your app → Click Start.
+6. Test the Application
+Access via browser:
+http://<hostname>:<port>/<context-root>
+Check logs:
+SystemOut.log and SystemErr.log for errors.
+7. Optional: Integrate with IBM HTTP Server
+Install WebSphere Plugins.
+Configure httpd.conf to load the plugin.
+Generate plugin-cfg.xml using the Plugin Configuration Tool.
+Restart both WAS and IHS 
+
+
+
+
+
+
+admincontrol
+
+
+jenkins job creation for qa
+ocds integ installations
+ansible issue startup
+
+
+
+mw scripts,
+FS cleanup, ssp
