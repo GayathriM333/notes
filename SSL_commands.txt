@@ -1,0 +1,108 @@
+create private key and csr
+
+openssl req -newkey rsa:2048 -nodes -keyout appkey.key -out appreq.csr
+Submit CSR to CA 
+once certs are received then we have to create keystore
+openssl pkcs12 -export -out appkeystore.p12 -inkey appkey.key -in appcert.crt -certfile cacert.crt
+
+
+✅ Step 2: Place the Keystore in a Secure Location
+Put appkeystore.p12 in a secure directory accessible by WAS, e.g.:
+/opt/IBM/WebSphere/AppServer/profile/<profile name>/cells/appkeystore.p12
+
+
+✅ Step 3: Create a New SSL Configuration in WAS Admin Console
+
+Login to Admin Console (https://<host>:<port>/ibm/console)
+Navigate to:
+Security > SSL certificate and key management > SSL configurations
+
+
+Click New to create a new SSL configuration:
+
+Name: AppSSLConfig
+Protocol: TLSv1.2 or TLSv1.3 (based on your requirement)
+
+
+✅ Step 4: Configure Keystore and Truststore
+Inside AppSSLConfig:
+a. Keystore Configuration
+
+Click Key stores and certificates
+Click New
+
+Name: AppKeyStore
+Type: PKCS12
+Path: /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/etc/ssl/appkeystore.p12
+Password: (enter the password used during export)
+
+
+Save and click Apply
+
+b. Truststore Configuration
+If you have a separate truststore (e.g., with CA certs):
+
+Add it similarly under Trust stores and certificates
+Or use the default CellDefaultTrustStore
+
+
+✅ Step 7: Restart the Server
+Restart the application server to apply the SSL configuration.
+
+verify keystore content:
+openssl pkcs12 -info -in appkeystore.p12
+------------------------------------------------------------------------------------------------------------------------------
+
+IHS renewal:
+
+Create CSR
+gskcmd -certreq -create \
+  -db key.kdb \
+  -pw <keystore_password> \
+  -label mycert \
+  -dn "CN=yourdomain.com,O=YourOrg,C=IN" \
+  -file renew.csr
+
+Send CSR to CA
+
+Receive the Signed Certificate
+gskcmd -certreq -receive \
+  -db key.kdb \
+  -pw <keystore_password> \
+  -file renewed_cert.arm \
+  -label mycert
+
+-------------------------------------------------------------------------------------------------
+keytool -genkeypair -alias mykey -keyalg RSA -keystore keystore.jks -- Generate a new key pair
+keytool -certreq -alias mykey -file mycsr.csr -keystore keystore.jks -- Generate CSR
+keytool -importcert -alias mykey -file signedcert.crt -keystore keystore.jks -- Import signed certificate
+keytool -importcert -trustcacerts -file ca.crt -keystore keystore.jks -- Import CA certificate
+keytool -list -v -keystore keystore.jks -- View keystore contents
+openssl req -newkey rsa:2048 -nodes -keyout server.key -out server.csr -- Generate private key + CSR
+openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -out server.crt -days 365 -CAcreateserial --- Self-sign or CA sign
+openssl pkcs12 -export -out keystore.p12 -inkey server.key -in server.crt -certfile ca.crt --- Create .p12 keystore
+openssl pkcs12 -info -in keystore.p12  ----View .p12 contents
+openssl x509 -in server.crt -text -noout --- View certificate details
+
+gskcmd -keydb -create -db key.kdb -pw password -type cms -stash------Create new keystore
+gskcmd -certreq -create -db key.kdb -pw password -label mycert -dn "CN=yourdomain.com,O=Org,C=IN" -file mycsr.csr-------Generate CSR
+gskcmd -certreq -receive -db key.kdb -pw password -file signedcert.arm -label mycert -----Import signed certificate
+gskcmd -cert -add -db key.kdb -pw password -label CA -file ca.arm -format ascii ------Import CA certificate
+gskcmd -cert -default -db key.kdb -pw password -label mycert ---Set default certificate
+gskcmd -cert -list -db key.kdb -pw password -----List certificates in keystore
+
+keytool -importkeystore \
+  -srckeystore keystore.jks \
+  -destkeystore keystore.p12 \
+  -deststoretype PKCS12
+
+keytool -exportcert \
+  -alias mykey \
+  -keystore keystore.jks \
+  -file mycert.crt \
+  -rfc
+
+
+
+
+
